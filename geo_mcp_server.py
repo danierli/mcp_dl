@@ -72,19 +72,31 @@ def _bearer_auth(app, token: str):
     return _Auth(app)
 
 
-def run():
-    """启动 SSE 服务。优先用 sse_app + uvicorn（支持鉴权中间件），否则回退 mcp.run。"""
-    import uvicorn
+def build_app():
+    """构造带可选 Bearer 鉴权的 ASGI app，供本地 run() 与创空间入口 app.py 复用。
 
+    返回 FastMCP 的 SSE/HTTP ASGI app；若设置 MCP_TOKEN 则包裹鉴权中间件。
+    若当前 mcp SDK 未暴露 sse_app/http_app，返回 None（调用方需回退 mcp.run）。
+    """
     # 不同版本 mcp SDK 暴露 ASGI app 的方法名不同，做兼容
     app_getter = getattr(mcp, "sse_app", None) or getattr(mcp, "http_app", None)
-    if app_getter is not None:
-        app = app_getter()
-        if MCP_TOKEN:
-            app = _bearer_auth(app, MCP_TOKEN)
-            print(f"[MCP] 已启用 Bearer 鉴权（token 长度 {len(MCP_TOKEN)}）")
-        else:
-            print("[MCP] 未设置 MCP_TOKEN，跳过鉴权（仅供本地调试）")
+    if app_getter is None:
+        return None
+    app = app_getter()
+    if MCP_TOKEN:
+        app = _bearer_auth(app, MCP_TOKEN)
+        print(f"[MCP] 已启用 Bearer 鉴权（token 长度 {len(MCP_TOKEN)}）")
+    else:
+        print("[MCP] 未设置 MCP_TOKEN，跳过鉴权（仅供本地调试）")
+    return app
+
+
+def run():
+    """本地直接启动入口。优先 sse_app + uvicorn（支持鉴权），否则回退 mcp.run。"""
+    import uvicorn
+
+    app = build_app()
+    if app is not None:
         print(f"[MCP] SSE 服务启动：http://{GEO_MCP_HOST}:{GEO_MCP_PORT}/sse")
         uvicorn.run(app, host=GEO_MCP_HOST, port=GEO_MCP_PORT)
     else:
