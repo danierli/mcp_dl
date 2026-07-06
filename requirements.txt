@@ -1,0 +1,12 @@
+# test 目录独立依赖（不修改项目根目录 requirements.txt）
+# 安装：pip install -r test/requirements.txt
+#
+# 说明：fastapi / uvicorn / openai / pydantic 在主项目环境中通常已存在；
+#      本次至少需新装 mcp 与 sse-starlette。聚类用纯 Python 实现，不引入 sklearn。
+
+fastapi
+uvicorn
+openai
+pydantic
+mcp>=1.2.0
+sse-starlette>=2.1.0
