@@ -19,3 +19,7 @@ env/
 # IDE
 .idea/
 .vscode/
+
+# 本地调试用：/chat 接口与测试脚本（不纳入仓库）
+chat_api.py
+test_geo_tools.py
